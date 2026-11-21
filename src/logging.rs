@@ -1,5 +1,5 @@
-//! Session logging. Log files are created 0600, never through a symlink,
-//! and only if they belong to the current user.
+//! Session logging. Log files are created 0600, never through a symlink or
+//! a second hard link, and only if they belong to the current user.
 
 use std::fs::{File, OpenOptions, Permissions};
 use std::io::{self, BufWriter, Write};
@@ -70,6 +70,11 @@ pub fn open_log(path: &Path, append: bool) -> io::Result<File> {
             io::ErrorKind::PermissionDenied,
             "file is owned by another user",
         ));
+    }
+    // Another name for the same file (~/.bashrc, say): emptying the log or
+    // appending to it would change that file too.
+    if m.nlink() > 1 {
+        return Err(io::Error::other("file has other hard links"));
     }
     if m.mode() & 0o077 != 0 {
         f.set_permissions(Permissions::from_mode(0o600))?;
@@ -300,6 +305,18 @@ mod tests {
         let link = d.join("term.log");
         std::os::unix::fs::symlink(&target, &link).unwrap();
         assert!(open_log(&link, false).is_err());
+        assert_eq!(fs::read_to_string(&target).unwrap(), "keep");
+    }
+
+    #[test]
+    fn hard_linked_logs_are_refused() {
+        let d = fresh_dir("log-hardlink");
+        let target = d.join("target");
+        fs::write(&target, "keep").unwrap();
+        let link = d.join("term.log");
+        fs::hard_link(&target, &link).unwrap();
+        assert!(open_log(&link, false).is_err());
+        assert!(open_log(&link, true).is_err());
         assert_eq!(fs::read_to_string(&target).unwrap(), "keep");
     }
 

@@ -3,6 +3,27 @@
 All notable changes to moriartty. The packages carry the same notes
 (`packaging/moriartty.spec`, AppStream metadata).
 
+## 1.0.1 — 2026-11-21
+
+Security
+- `-e` commands start by their full path too, as saved sessions' commands do
+  since 0.9.9. A relative or empty `$PATH` entry such as `.` could make the
+  directory a terminal opens in (`-dir`) decide what runs.
+- A log file that is a second hard link to another file (`~/.bashrc`, say) is
+  refused, instead of being emptied or appended to.
+- With control characters allowed in pastes, a one-line paste that still
+  contains one (Ctrl+O runs the line in bash) asks first, like a multi-line
+  one.
+
+Fixes
+- A Default Settings file that can't be read no longer replaces an earlier
+  `….toml.bad` when it is moved aside; later ones become `….toml.bad.1` and
+  so on.
+
+Releases
+- A manually started release build is checked on the tag it publishes, not
+  on the branch it was started from.
+
 ## 1.0.0 — 2026-10-31
 
 The first stable release.

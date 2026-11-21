@@ -1,6 +1,6 @@
 [package]
 name = "moriartty"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 # gtk4 0.11 / glib 0.22 need 1.92.
 rust-version = "1.92"

@@ -86,8 +86,17 @@ pub fn spawn(
     let is_shell = !matches!(command, Some([_, ..]));
     let (mut cmd, desc) = match command {
         Some([prog, args @ ..]) => {
-            let mut c = Command::new(prog);
-            c.args(args);
+            // A bare name is looked up here, on the absolute entries of $PATH
+            // only. Left to exec, it could also match a relative or empty
+            // entry, in the directory the program starts in.
+            let path = if prog.contains('/') {
+                PathBuf::from(prog)
+            } else {
+                validate::find_in_path(prog)
+                    .ok_or_else(|| format!("Program {prog:?} not found on $PATH"))?
+            };
+            let mut c = Command::new(&path);
+            c.arg0(prog).args(args);
             (
                 c,
                 format!("Running {prog:?} with {} argument(s)", args.len()),
@@ -303,6 +312,20 @@ impl Drop for Pty {
                 reapers.retain(|t| !t.is_finished());
                 reapers.push(thread);
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unknown_programs_are_not_started() {
+        let argv = ["no-such-program-moriartty".to_string()];
+        match spawn(&Settings::default(), Some(&argv[..]), None, 80, 24) {
+            Ok(_) => panic!("a program that isn't on $PATH must not start"),
+            Err(e) => assert!(e.contains("not found on $PATH"), "{e}"),
         }
     }
 }

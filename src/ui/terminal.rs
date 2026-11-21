@@ -29,7 +29,7 @@ use crate::config::*;
 use crate::logging::{self, SessionLog};
 use crate::marks::{Mark, Scanner};
 use crate::matching::{self, PCRE2_CASELESS, PCRE2_MULTILINE, PCRE2_UTF};
-use crate::paste::{is_invisible, paste_preview, sanitize_paste};
+use crate::paste::{has_hidden, paste_preview, sanitize_paste};
 use crate::pty::{self, ExitState, Pty, ReadStatus};
 use crate::storage;
 
@@ -2946,9 +2946,9 @@ impl Tab {
                 return;
             }
             let breaks = clean.matches('\r').count();
-            // Invisible or direction-changing characters can make even one
-            // line run something other than what it shows.
-            let hidden = clean.chars().any(is_invisible);
+            // Invisible, direction-changing or control characters can make
+            // even one line run something other than what it shows.
+            let hidden = has_hidden(&clean);
             if confirm && (breaks > 0 || hidden) {
                 let question = if breaks > 0 {
                     let lines = breaks + usize::from(!clean.ends_with('\r'));

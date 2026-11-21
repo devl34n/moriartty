@@ -250,9 +250,8 @@ fn load_or_quarantine(name: &str) -> Settings {
             Settings::default()
         }
         Err(LoadError::Parse(path, e)) => {
-            let bad = path.with_extension("toml.bad");
-            notice(match fs::rename(&path, &bad) {
-                Ok(()) => format!(
+            notice(match quarantine(&path) {
+                Ok(bad) => format!(
                     "Saved default settings could not be read ({e}). They were moved to {} \
                      and built-in defaults are used.",
                     bad.display()
@@ -265,6 +264,38 @@ fn load_or_quarantine(name: &str) -> Settings {
             Settings::default()
         }
     }
+}
+
+/// Move a settings file that can't be read aside, to the first free name of
+/// `….toml.bad`, `….toml.bad.1`, ..., so an earlier one is never replaced.
+/// A hard link fails where something is already there; a rename would not.
+fn quarantine(path: &Path) -> io::Result<PathBuf> {
+    for n in 0..100 {
+        let bad = match n {
+            0 => path.with_extension("toml.bad"),
+            n => path.with_extension(format!("toml.bad.{n}")),
+        };
+        match fs::hard_link(path, &bad) {
+            Ok(()) => {
+                if let Err(e) = fs::remove_file(path) {
+                    let _ = fs::remove_file(&bad);
+                    return Err(e);
+                }
+                return Ok(bad);
+            }
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
+            // No hard links on this file system: rename to the name that
+            // was just found free.
+            Err(_) => {
+                fs::rename(path, &bad)?;
+                return Ok(bad);
+            }
+        }
+    }
+    Err(io::Error::new(
+        io::ErrorKind::AlreadyExists,
+        "too many earlier copies; remove some",
+    ))
 }
 
 pub fn save_session(name: &str, s: &Settings) -> Result<(), String> {
@@ -368,6 +399,25 @@ mod tests {
             "columns = \"not a number\"\n"
         );
         assert!(take_notices().iter().any(|n| n.contains("Broken test")));
+    }
+
+    #[test]
+    fn earlier_unreadable_settings_are_kept() {
+        let path = session_path("Broken twice test").unwrap();
+        for text in ["columns = \"first\"\n", "columns = \"second\"\n"] {
+            write_private_atomic(&path, text.as_bytes()).unwrap();
+            let s = load_or_quarantine("Broken twice test");
+            assert_eq!(s, Settings::default());
+        }
+        assert!(!path.exists());
+        assert_eq!(
+            fs::read_to_string(path.with_extension("toml.bad")).unwrap(),
+            "columns = \"first\"\n"
+        );
+        assert_eq!(
+            fs::read_to_string(path.with_extension("toml.bad.1")).unwrap(),
+            "columns = \"second\"\n"
+        );
     }
 
     #[test]

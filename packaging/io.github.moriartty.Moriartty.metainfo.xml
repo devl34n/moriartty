@@ -53,6 +53,16 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="1.0.1" date="2026-11-21">
+      <description>
+        <ul>
+          <li>Programs started with -e are looked up by their full path, so the folder a terminal opens in can't change what runs</li>
+          <li>A log file that is another name for a different file is refused instead of being emptied or added to</li>
+          <li>With control characters allowed in pastes, a one-line paste that contains one asks first</li>
+          <li>Unreadable saved settings no longer replace an earlier copy kept aside</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-10-31">
       <description>
         <p>The first stable release. The licence is now GPL-3.0, and the name is now written moriartty, in lower case.</p>

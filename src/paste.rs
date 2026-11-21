@@ -52,6 +52,16 @@ pub fn is_invisible(c: char) -> bool {
     )
 }
 
+/// Whether cleaned paste text has characters that don't show as themselves:
+/// invisible or direction-changing ones, and control characters other than
+/// line breaks and tabs. Those are only left in when the user allows them,
+/// and can run the line on their own (Ctrl+O, in bash).
+pub fn has_hidden(clean: &str) -> bool {
+    clean
+        .chars()
+        .any(|c| is_invisible(c) || (c.is_control() && c != '\r' && c != '\t'))
+}
+
 /// Text for the paste confirmation dialog: line breaks shown as new lines,
 /// control and invisible characters spelled out as <U+XXXX> so they can't
 /// disguise the paste, cut to `max` characters with a note of what is left.
@@ -115,6 +125,16 @@ mod tests {
         for c in ['a', 'é', 'я', '日', '⚠', '\u{FE0F}', '😀'] {
             assert!(!is_invisible(c), "U+{:04X}", c as u32);
         }
+    }
+
+    #[test]
+    fn hidden_characters_are_found() {
+        assert!(!has_hidden("ls -l\r"));
+        assert!(!has_hidden("tab\there"));
+        assert!(has_hidden("a\u{200B}b"));
+        // Control characters are only there when the user allows them.
+        assert!(has_hidden(&sanitize_paste("rm -rf ~\x0f", true)));
+        assert!(!has_hidden(&sanitize_paste("rm -rf ~\x0f", false)));
     }
 
     #[test]

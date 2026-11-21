@@ -1,5 +1,6 @@
 //! Input validation for the few values that reach the filesystem or exec.
 
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use crate::storage;
@@ -82,8 +83,12 @@ pub fn command(argv: &[String]) -> Result<(), String> {
 /// Where $PATH has this program. Relative entries don't count: they would make
 /// what runs depend on the directory it starts in.
 pub fn find_in_path(name: &str) -> Option<PathBuf> {
-    let path = std::env::var_os("PATH")?;
-    std::env::split_paths(&path)
+    find_in(name, &std::env::var_os("PATH")?)
+}
+
+/// Where the directories in `path` (a list like $PATH) have this program.
+fn find_in(name: &str, path: &OsStr) -> Option<PathBuf> {
+    std::env::split_paths(path)
         .filter(|d| d.is_absolute())
         .map(|d| d.join(name))
         .find(|p| is_executable(p))
@@ -151,6 +156,34 @@ mod tests {
     fn programs_on_the_path() {
         assert!(find_in_path("sh").is_some_and(|p| p.is_absolute()));
         assert!(find_in_path("no-such-program-moriartty").is_none());
+    }
+
+    #[test]
+    fn relative_path_entries_never_match() {
+        use std::os::unix::fs::PermissionsExt;
+        let d = storage::test_support::fresh_dir("path-lookup");
+        let prog = d.join("moriartty-test-prog");
+        std::fs::write(&prog, "#!/bin/sh\n").unwrap();
+        std::fs::set_permissions(&prog, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(
+            find_in("moriartty-test-prog", d.as_os_str()),
+            Some(prog.clone())
+        );
+        // The same directory as a relative entry: enough ".." to reach "/"
+        // from wherever the tests run, then the rest of its path.
+        let relative = format!(
+            "{}{}",
+            "../".repeat(64),
+            d.display().to_string().trim_start_matches('/')
+        );
+        assert!(Path::new(&relative).join("moriartty-test-prog").exists());
+        for path in [relative.as_str(), "", ".", ":"] {
+            assert_eq!(
+                find_in("moriartty-test-prog", OsStr::new(path)),
+                None,
+                "{path:?}"
+            );
+        }
     }
 
     #[test]

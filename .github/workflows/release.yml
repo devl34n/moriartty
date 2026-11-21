@@ -16,10 +16,13 @@ permissions:
   contents: read
 
 jobs:
-  # Everything CI checks must pass before anything is published. A manual run
-  # checks the branch it was started from.
+  # Everything CI checks must pass before anything is published, checked on
+  # the tag that is published (for a manual run too, whichever branch it was
+  # started from).
   checks:
     uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
 
   release:
     needs: checks

@@ -1,5 +1,5 @@
 Name:           moriartty
-Version:        1.0.0
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        Private-by-default terminal for Linux, inspired by PuTTY
 License:        GPL-3.0-only
@@ -107,6 +107,17 @@ cargo test --release --frozen --offline
 %{_datadir}/nautilus-python/extensions/moriartty-nautilus.py
 
 %changelog
+* Sat Nov 21 2026 moriartty Developers - 1.0.1-1
+- -e commands start by their full path too, so a relative or empty $PATH
+  entry can't make the directory a terminal opens in decide what runs
+- A log file with other hard links is refused instead of being emptied or
+  appended to
+- With control characters allowed in pastes, a one-line paste that still
+  contains one asks first
+- An unreadable Default Settings file no longer replaces an earlier
+  .toml.bad copy
+- A manually started release build is checked on the tag it publishes
+
 * Sat Oct 31 2026 moriartty Developers - 1.0.0-1
 - The first stable release
 - The licence is now GPL-3.0; earlier releases stay under MIT
