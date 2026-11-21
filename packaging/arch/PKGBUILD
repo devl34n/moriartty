@@ -9,7 +9,7 @@ pkgver=1.0.1
 pkgrel=1
 pkgdesc="Private-by-default terminal for Linux, inspired by PuTTY's pterm"
 arch=('x86_64' 'aarch64')
-url="https://github.com/devl34n/Moriartty"
+url="https://github.com/devl34n/moriartty"
 license=('GPL-3.0-only')
 # ttf-dejavu: the default font is "Monospace", and a minimal Arch install may
 # have no proper monospace font for it, which leaves the text sitting high in
@@ -23,20 +23,20 @@ source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 prepare() {
-    cd "Moriartty-$pkgver"
+    cd "$pkgname-$pkgver"
     export RUSTUP_TOOLCHAIN=stable
     cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
 }
 
 build() {
-    cd "Moriartty-$pkgver"
+    cd "$pkgname-$pkgver"
     export RUSTUP_TOOLCHAIN=stable
     export CARGO_TARGET_DIR=target
     cargo build --frozen --release
 }
 
 check() {
-    cd "Moriartty-$pkgver"
+    cd "$pkgname-$pkgver"
     export RUSTUP_TOOLCHAIN=stable
     export CARGO_TARGET_DIR=target
     # The evil bytes test skips itself without a display.
@@ -44,7 +44,7 @@ check() {
 }
 
 package() {
-    cd "Moriartty-$pkgver"
+    cd "$pkgname-$pkgver"
     local share="$pkgdir/usr/share" id=io.github.moriartty.Moriartty size sh
 
     install -Dm0755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"

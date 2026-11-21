@@ -26,8 +26,8 @@ cp /build/packaging/arch/PKGBUILD "$WORK/"
 # the name the PKGBUILD's source line gives it: makepkg then uses this file
 # instead of downloading, so the package is built from what was streamed in.
 mkdir -p /tmp/src
-cp -a /build "/tmp/src/Moriartty-$VERSION"
-tar -C /tmp/src -czf "$WORK/moriartty-$VERSION.tar.gz" "Moriartty-$VERSION"
+cp -a /build "/tmp/src/moriartty-$VERSION"
+tar -C /tmp/src -czf "$WORK/moriartty-$VERSION.tar.gz" "moriartty-$VERSION"
 chown -R builder: "$WORK"
 
 cd "$WORK"
