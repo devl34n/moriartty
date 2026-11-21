@@ -16,7 +16,7 @@ vte = { package = "vte4", version = "0.10", features = ["v0_70"] }
 serde = { version = "1", features = ["derive"] }
 # 1.x: the same toml the gtk-rs build scripts use, so only one copy is built.
 toml = "1"
-nix = { version = "0.31", features = ["signal", "process", "user"] }
+nix = { version = "0.32", features = ["signal", "process", "user"] }
 libc = "0.2"
 
 # Feeds hostile output into a real VTE widget. Has its own main() (GTK must
