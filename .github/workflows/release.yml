@@ -22,7 +22,7 @@ jobs:
   checks:
     uses: ./.github/workflows/ci.yml
     with:
-      ref: ${{ inputs.tag || github.ref }}
+      tag: ${{ inputs.tag || github.ref_name }}
 
   release:
     needs: checks
@@ -36,7 +36,8 @@ jobs:
       # Pinned to a commit SHA (v4.2.2) so a moved tag can't change what runs.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          # Only a tag, as in the checks (see ci.yml).
+          ref: refs/tags/${{ env.TAG }}
           persist-credentials: false
 
       # The build scripts run inside Fedora/Debian containers via podman,
